@@ -1,0 +1,16 @@
+{
+  "name": "coastal-guard",
+  "version": "1.0.0",
+  "description": "DRMP – Disaster Response & Management Platform",
+  "license": "MIT",
+  "scripts": {
+    "server": "cd server && npm run dev",
+    "client": "cd client && npm run dev",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "install-all": "npm install && cd server && npm install && cd ../client && npm install"
+  },
+  "dependencies": {
+    "concurrently": "^8.2.2",
+    "mongodb": "^7.5.0"
+  }
+}
