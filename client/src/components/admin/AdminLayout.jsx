@@ -19,7 +19,7 @@ const AdminLayout = () => {
       <AdminNavbar onToggleSidebar={toggleSidebar} />
       <div className="flex flex-1 overflow-hidden">
         <AdminSidebar isOpen={sidebarOpen} onClose={closeSidebar} />
-        <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+        <div className="flex-1 flex flex-col min-w-0 overflow-y-auto lg:ml-64">
           <main className="flex-1 p-4 sm:p-6 lg:p-8">
             <Outlet />
           </main>

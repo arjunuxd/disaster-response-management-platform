@@ -7,6 +7,7 @@ import FilterDropdown from '../../components/ui/FilterDropdown';
 import AdminTable from '../../components/admin/AdminTable';
 import PageHeader from '../../components/admin/PageHeader';
 import Modal from '../../components/ui/Modal';
+import ConfirmationModal from '../../components/admin/ConfirmationModal';
 import { useToast } from '../../context/ToastContext';
 import { formatDateTime } from '../../utils';
 
@@ -78,6 +79,7 @@ const ManageAuditLog = () => {
   const [loading, setLoading] = useState(true);
   const [selectedLog, setSelectedLog] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showExportConfirm, setShowExportConfirm] = useState(false);
   const [filters, setFilters] = useState({
     search: '',
     action: '',
@@ -251,12 +253,13 @@ const ManageAuditLog = () => {
         title="Audit Log"
         subtitle="Track all administrative actions across the system"
         action="Export CSV"
-        onAction={handleExport}
+        onAction={() => setShowExportConfirm(true)}
       />
 
       <div className="card p-4 shadow-card">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <div>
+            <label className="text-xs font-medium text-navy-500 mb-1.5 block">Search</label>
             <SearchBox value={filters.search} onSearch={handleSearch} placeholder="Search admin, action, remarks..." />
           </div>
           <FilterDropdown
@@ -278,9 +281,9 @@ const ManageAuditLog = () => {
             onChange={(v) => handleFilterChange('action', v)}
           />
         </div>
-        <div className="flex flex-col sm:flex-row gap-3 items-end">
-          <div className="flex-1 w-full sm:w-auto">
-            <label className="text-xs font-medium text-navy-500 mb-1 block">Start Date</label>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-3">
+          <div>
+            <label className="text-xs font-medium text-navy-500 mb-1.5 block">Start Date</label>
             <input
               type="date"
               value={filters.startDate}
@@ -288,8 +291,8 @@ const ManageAuditLog = () => {
               className="input-field"
             />
           </div>
-          <div className="flex-1 w-full sm:w-auto">
-            <label className="text-xs font-medium text-navy-500 mb-1 block">End Date</label>
+          <div>
+            <label className="text-xs font-medium text-navy-500 mb-1.5 block">End Date</label>
             <input
               type="date"
               value={filters.endDate}
@@ -298,15 +301,17 @@ const ManageAuditLog = () => {
             />
           </div>
           {hasActiveFilters && (
-            <button
-              onClick={() => setFilters({ search: '', action: '', module: '', status: '', startDate: '', endDate: '', page: 1 })}
-              className="btn-ghost btn-sm text-navy-500"
-            >
-              <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-              Clear Filters
-            </button>
+            <div className="flex items-end">
+              <button
+                onClick={() => setFilters({ search: '', action: '', module: '', status: '', startDate: '', endDate: '', page: 1 })}
+                className="btn-ghost btn-sm text-navy-500"
+              >
+                <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Clear Filters
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -401,6 +406,15 @@ const ManageAuditLog = () => {
           </div>
         )}
       </Modal>
+
+      <ConfirmationModal
+        isOpen={showExportConfirm}
+        onClose={() => setShowExportConfirm(false)}
+        onConfirm={() => { setShowExportConfirm(false); handleExport(); }}
+        title="Export Audit Log"
+        message={`Export ${pagination.total} audit log${pagination.total !== 1 ? 's' : ''} as a CSV file?`}
+        confirmText="Export CSV"
+      />
     </div>
   );
 };

@@ -5,6 +5,7 @@ import AdminTable from '../../components/admin/AdminTable';
 import PageHeader from '../../components/admin/PageHeader';
 import Modal from '../../components/ui/Modal';
 import ConfirmationModal from '../../components/admin/ConfirmationModal';
+import LocationPickerModal from '../../components/map/LocationPickerModal';
 import { useToast } from '../../context/ToastContext';
 import { RISK_LEVELS, INDIAN_STATES } from '../../utils/constants';
 import { formatDate } from '../../utils';
@@ -44,6 +45,7 @@ const ManageRiskZones = () => {
   const [formData, setFormData] = useState(emptyForm);
   const [isEditing, setIsEditing] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [showMapPicker, setShowMapPicker] = useState(false);
 
   const fetchZones = useCallback(async () => {
     setLoading(true);
@@ -125,6 +127,17 @@ const ManageRiskZones = () => {
     } finally {
       setActionLoading(false);
     }
+  };
+
+  const handleLocationPick = (loc) => {
+    setFormData((p) => ({
+      ...p,
+      latitude: loc.lat.toString(),
+      longitude: loc.lng.toString(),
+      district: loc.district || p.district,
+      state: loc.state || p.state,
+    }));
+    setShowMapPicker(false);
   };
 
   const columns = [
@@ -271,30 +284,43 @@ const ManageRiskZones = () => {
               />
             </div>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="input-label">Latitude <span className="text-danger-600">*</span></label>
-              <input
-                type="number"
-                step="any"
-                value={formData.latitude}
-                onChange={(e) => setFormData((p) => ({ ...p, latitude: e.target.value }))}
-                required
-                className="input-field"
-                placeholder="e.g., 13.0827"
-              />
-            </div>
-            <div>
-              <label className="input-label">Longitude <span className="text-danger-600">*</span></label>
-              <input
-                type="number"
-                step="any"
-                value={formData.longitude}
-                onChange={(e) => setFormData((p) => ({ ...p, longitude: e.target.value }))}
-                required
-                className="input-field"
-                placeholder="e.g., 80.2707"
-              />
+          <div>
+            <label className="input-label">Location <span className="text-danger-600">*</span></label>
+            <div
+              onClick={() => setShowMapPicker(true)}
+              className="border-2 border-dashed border-gray-300 rounded-xl p-4 cursor-pointer hover:border-primary-400 hover:bg-primary-50/30 transition-all"
+            >
+              {formData.latitude && formData.longitude ? (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-primary-100 flex items-center justify-center shrink-0">
+                      <svg className="w-4 h-4 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-gray-900">
+                        {formData.district || 'Unknown District'}{formData.state ? `, ${formData.state}` : ''}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 text-xs text-gray-400">
+                    <span>Lat: {parseFloat(formData.latitude).toFixed(5)}</span>
+                    <span>Lng: {parseFloat(formData.longitude).toFixed(5)}</span>
+                    <span className="text-primary-600 font-medium ml-auto">Click to change</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-4">
+                  <svg className="w-10 h-10 text-gray-300 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <p className="text-sm font-medium text-gray-600">Pick zone location on map</p>
+                  <p className="text-xs text-gray-400 mt-1">District & state auto-detected from coordinates</p>
+                </div>
+              )}
             </div>
           </div>
           <div>
@@ -389,6 +415,15 @@ const ManageRiskZones = () => {
         loading={actionLoading}
         danger
       />
+
+      {showMapPicker && (
+        <LocationPickerModal
+          initialLat={formData.latitude ? parseFloat(formData.latitude) : null}
+          initialLng={formData.longitude ? parseFloat(formData.longitude) : null}
+          onSelect={handleLocationPick}
+          onClose={() => setShowMapPicker(false)}
+        />
+      )}
     </div>
   );
 };
