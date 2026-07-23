@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { useNotifications } from '../../context/NotificationContext';
@@ -228,23 +228,9 @@ const NotificationDropdown = ({ isOpen, onClose }) => {
 const NotificationBell = () => {
   const { unreadCount } = useNotifications();
   const [isOpen, setIsOpen] = useState(false);
-  const containerRef = useRef(null);
-
-  const handleClickOutside = useCallback((e) => {
-    if (containerRef.current && !containerRef.current.contains(e.target)) {
-      setIsOpen(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isOpen, handleClickOutside]);
 
   return (
-    <div className="relative" ref={containerRef}>
+    <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="relative p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
