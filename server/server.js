@@ -5,9 +5,12 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const mongoSanitize = require('express-mongo-sanitize');
 const hpp = require('hpp');
+
 const config = require('./config');
 const connectDB = require('./config/db');
+
 const { errorHandler } = require('./middleware');
+
 const routes = require('./routes');
 const authRoutes = require('./routes/authRoutes');
 const reportRoutes = require('./routes/reportRoutes');
@@ -21,29 +24,38 @@ const notificationRoutes = require('./routes/notificationRoutes');
 const searchRoutes = require('./routes/searchRoutes');
 const disasterTypeRoutes = require('./routes/disasterTypeRoutes');
 const auditLogRoutes = require('./routes/auditLogRoutes');
+const geocodeRoutes = require('./routes/geocodeRoutes');
 
-// ─────────────────────────────────────────────
-// Initialize Express App
-// ─────────────────────────────────────────────
+// ======================================================
+// Initialize Express
+// ======================================================
+
 const app = express();
 
-// ─────────────────────────────────────────────
+// ======================================================
 // Security Headers
-// ─────────────────────────────────────────────
-app.use(helmet({
-  crossOriginResourcePolicy: { policy: 'cross-origin' },
-  contentSecurityPolicy: false,
-}));
+// ======================================================
 
-// ─────────────────────────────────────────────
-// Rate Limiting
-// ─────────────────────────────────────────────
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    contentSecurityPolicy: false,
+  })
+);
+
+// ======================================================
+// Rate Limiter
+// ======================================================
+
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10000,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { success: false, message: 'Too many requests. Please try again later.' },
+  message: {
+    success: false,
+    message: 'Too many requests. Please try again later.',
+  },
 });
 
 const authLimiter = rateLimit({
@@ -51,43 +63,74 @@ const authLimiter = rateLimit({
   max: 10000,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { success: false, message: 'Too many attempts. Please try again later.' },
+  message: {
+    success: false,
+    message: 'Too many login attempts. Please try again later.',
+  },
 });
 
 app.use('/api', apiLimiter);
 
-// ─────────────────────────────────────────────
-// CORS Configuration
-// ─────────────────────────────────────────────
-const corsOptions = {
-  origin: config.clientUrl,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
-  credentials: true,
-  optionsSuccessStatus: 200,
-};
-app.use(cors(corsOptions));
+// ======================================================
+// CORS
+// ======================================================
 
-// ─────────────────────────────────────────────
-// Body Parsers
-// ─────────────────────────────────────────────
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  'http://localhost:5173',
+].filter(Boolean);
+
+app.use(
+  cors({
+    origin(origin, callback) {
+      // Allow Postman, Render health checks, etc.
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      console.log(`❌ Blocked by CORS: ${origin}`);
+
+      return callback(new Error('Not allowed by CORS'));
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-Requested-With',
+    ],
+    optionsSuccessStatus: 200,
+  })
+);
+
+// ======================================================
+// Body Parser
+// ======================================================
+
 app.use(express.json({ limit: '16kb' }));
 app.use(express.urlencoded({ extended: true, limit: '16kb' }));
 
-// ─────────────────────────────────────────────
-// Security Sanitization
-// ─────────────────────────────────────────────
+// ======================================================
+// Security
+// ======================================================
+
 app.use(mongoSanitize());
 app.use(hpp());
 
-// ─────────────────────────────────────────────
-// Static Files (uploads)
-// ─────────────────────────────────────────────
+// ======================================================
+// Static Uploads
+// ======================================================
+
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// ─────────────────────────────────────────────
-// Routes
-// ─────────────────────────────────────────────
+// ======================================================
+// API Routes
+// ======================================================
+
 app.use('/api', routes);
+
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/alerts', alertRoutes);
@@ -100,47 +143,62 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/disaster-types', disasterTypeRoutes);
 app.use('/api/audit-logs', auditLogRoutes);
-app.use('/api/geocode', require('./routes/geocodeRoutes'));
+app.use('/api/geocode', geocodeRoutes);
 
-// ─────────────────────────────────────────────
-// Health check at root
-// ─────────────────────────────────────────────
+// ======================================================
+// Root Route
+// ======================================================
+
 app.get('/', (req, res) => {
-  res.json({ message: 'API Running Successfully' });
+  res.status(200).json({
+    success: true,
+    message: 'DRMP API Running Successfully',
+  });
 });
 
-// ─────────────────────────────────────────────
+// ======================================================
 // 404 Handler
-// ─────────────────────────────────────────────
+// ======================================================
+
 app.use((req, res) => {
-  res.status(404).json({ success: false, message: 'Route not found' });
+  res.status(404).json({
+    success: false,
+    message: 'Route not found',
+  });
 });
 
-// ─────────────────────────────────────────────
-// Global Error Handler
-// ─────────────────────────────────────────────
+// ======================================================
+// Error Handler
+// ======================================================
+
 app.use(errorHandler);
 
-// ─────────────────────────────────────────────
+// ======================================================
 // Start Server
-// ─────────────────────────────────────────────
+// ======================================================
+
 const startServer = async () => {
-  await connectDB();
+  try {
+    await connectDB();
 
-  const disasterTypeService = require('./services/disasterTypeService');
-  await disasterTypeService.seedDefaults();
+    const disasterTypeService = require('./services/disasterTypeService');
+    await disasterTypeService.seedDefaults();
 
-  app.listen(config.port, () => {
-    console.log(`\n╔══════════════════════════════════════════╗`);
-    console.log(`║       DRMP – API Server                 ║`);
-    console.log(`╠══════════════════════════════════════════╣`);
-    console.log(`║  Environment : ${config.nodeEnv.padEnd(26)}║`);
-    console.log(`║  Port        : ${String(config.port).padEnd(26)}║`);
-    console.log(`║  CORS Origin : ${config.clientUrl.padEnd(26)}║`);
-    console.log(`╚══════════════════════════════════════════╝`);
-    console.log(`\n→ Server running at http://localhost:${config.port}`);
-    console.log(`→ API test at http://localhost:${config.port}/api`);
-  });
+    app.listen(config.port, () => {
+      console.log('\n===========================================');
+      console.log('🚀 DRMP API SERVER STARTED');
+      console.log('===========================================');
+      console.log(`Environment : ${config.nodeEnv}`);
+      console.log(`Port        : ${config.port}`);
+      console.log(`Client URL  : ${process.env.CLIENT_URL}`);
+      console.log(`API URL     : http://localhost:${config.port}/api`);
+      console.log('===========================================\n');
+    });
+  } catch (err) {
+    console.error('Server Startup Failed');
+    console.error(err);
+    process.exit(1);
+  }
 };
 
 startServer();
