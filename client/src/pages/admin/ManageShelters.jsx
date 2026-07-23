@@ -1,13 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
 import adminService from '../../services/adminService';
 import { PageLoader } from '../../components/ui/Loader';
+import SearchBox from '../../components/ui/SearchBox';
+import FilterDropdown from '../../components/ui/FilterDropdown';
 import AdminTable from '../../components/admin/AdminTable';
 import PageHeader from '../../components/admin/PageHeader';
 import Modal from '../../components/ui/Modal';
 import ConfirmationModal from '../../components/admin/ConfirmationModal';
 import LocationPickerModal from '../../components/map/LocationPickerModal';
 import { useToast } from '../../context/ToastContext';
-import { INDIAN_STATES, SHELTER_STATUSES } from '../../utils/constants';
+import { SHELTER_STATUSES } from '../../utils/constants';
+import { formatDate } from '../../utils';
 
 const emptyForm = {
   shelterName: '',
@@ -21,6 +24,11 @@ const emptyForm = {
   status: 'Open',
 };
 
+const STATUS_BADGE = {
+  Open: 'badge-success',
+  Closed: 'badge-danger',
+};
+
 const ManageShelters = () => {
   const toast = useToast();
   const [shelters, setShelters] = useState([]);
@@ -32,8 +40,7 @@ const ManageShelters = () => {
   const [formData, setFormData] = useState(emptyForm);
   const [isEditing, setIsEditing] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
-  const [filterStatus, setFilterStatus] = useState('');
-  const [filterSearch, setFilterSearch] = useState('');
+  const [filters, setFilters] = useState({ status: '', search: '' });
   const [showMapPicker, setShowMapPicker] = useState(false);
 
   const fetchShelters = useCallback(async () => {
@@ -51,6 +58,34 @@ const ManageShelters = () => {
   useEffect(() => {
     fetchShelters();
   }, [fetchShelters]);
+
+  const filteredShelters = shelters.filter((s) => {
+    if (filters.status && s.status !== filters.status) return false;
+    if (filters.search) {
+      const q = filters.search.toLowerCase();
+      if (
+        !s.shelterName.toLowerCase().includes(q) &&
+        !s.district.toLowerCase().includes(q) &&
+        !(s.address && s.address.toLowerCase().includes(q))
+      ) {
+        return false;
+      }
+    }
+    return true;
+  });
+
+  const stats = {
+    total: shelters.length,
+    open: shelters.filter((s) => s.status === 'Open').length,
+    closed: shelters.filter((s) => s.status === 'Closed').length,
+    totalCapacity: shelters.reduce((sum, s) => sum + (s.capacity || 0), 0),
+  };
+
+  const hasActiveFilters = filters.status || filters.search;
+
+  const clearFilters = () => {
+    setFilters({ status: '', search: '' });
+  };
 
   const openCreateModal = () => {
     setFormData(emptyForm);
@@ -132,11 +167,17 @@ const ManageShelters = () => {
     }
   };
 
-  const filteredShelters = shelters.filter((s) => {
-    const matchesStatus = !filterStatus || s.status === filterStatus;
-    const matchesSearch = !filterSearch || s.shelterName.toLowerCase().includes(filterSearch.toLowerCase()) || s.district.toLowerCase().includes(filterSearch.toLowerCase());
-    return matchesStatus && matchesSearch;
-  });
+  const handleLocationPick = (loc) => {
+    setFormData((p) => ({
+      ...p,
+      latitude: loc.lat.toString(),
+      longitude: loc.lng.toString(),
+      address: loc.address || p.address,
+      district: loc.district || p.district,
+      state: loc.state || p.state,
+    }));
+    setShowMapPicker(false);
+  };
 
   const columns = [
     {
@@ -144,24 +185,27 @@ const ManageShelters = () => {
       render: (row) => (
         <div className="min-w-0">
           <p className="font-semibold text-navy-900 truncate text-sm">{row.shelterName}</p>
-          <p className="text-xs text-navy-400 truncate mt-0.5">{row.address}</p>
+          <p className="text-xs text-navy-400 truncate max-w-[220px]">{row.address}</p>
         </div>
       ),
     },
     {
       header: 'District',
-      render: (row) => <span className="text-sm text-navy-600">{row.district}</span>,
+      render: (row) => (
+        <div>
+          <span className="text-sm text-navy-600">{row.district}</span>
+          {row.state && <span className="text-xs text-navy-400 ml-1">, {row.state}</span>}
+        </div>
+      ),
     },
     {
       header: 'Capacity',
-      render: (row) => (
-        <span className="text-sm font-medium text-navy-700">{row.capacity}</span>
-      ),
+      render: (row) => <span className="text-sm font-medium text-navy-700">{row.capacity.toLocaleString()}</span>,
     },
     {
       header: 'Status',
       render: (row) => (
-        <span className={`badge ${row.status === 'Open' ? 'badge-success' : 'badge-danger'}`}>
+        <span className={`badge ${STATUS_BADGE[row.status] || 'badge-neutral'}`}>
           {row.status}
         </span>
       ),
@@ -169,6 +213,10 @@ const ManageShelters = () => {
     {
       header: 'Contact',
       render: (row) => <span className="text-sm text-navy-500 font-mono">{row.contactNumber}</span>,
+    },
+    {
+      header: 'Created',
+      render: (row) => <span className="text-sm text-navy-500">{formatDate(row.createdAt)}</span>,
     },
     {
       header: 'Actions',
@@ -199,7 +247,7 @@ const ManageShelters = () => {
               e.stopPropagation();
               handleToggleStatus(row);
             }}
-            className={`btn-xs ${row.status === 'Open' ? 'badge badge-warning border-0' : 'btn-ghost'}`}
+            className={`btn-ghost btn-xs ${row.status === 'Open' ? 'text-warning-600 hover:bg-warning-50' : 'text-success-600 hover:bg-success-50'}`}
           >
             {row.status === 'Open' ? 'Close' : 'Open'}
           </button>
@@ -218,18 +266,6 @@ const ManageShelters = () => {
     },
   ];
 
-  const handleLocationPick = (loc) => {
-    setFormData((p) => ({
-      ...p,
-      latitude: loc.lat.toString(),
-      longitude: loc.lng.toString(),
-      address: loc.address || p.address,
-      district: loc.district || p.district,
-      state: loc.state || p.state,
-    }));
-    setShowMapPicker(false);
-  };
-
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       <PageHeader
@@ -239,46 +275,75 @@ const ManageShelters = () => {
         onAction={openCreateModal}
       />
 
-      <div className="card p-4">
-        <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-          <div className="flex-1">
-            <div className="relative">
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-navy-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <input
-                type="text"
-                value={filterSearch}
-                onChange={(e) => setFilterSearch(e.target.value)}
-                placeholder="Search by name or district..."
-                className="input-field pl-10"
-              />
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="input-field w-auto min-w-[140px]"
-            >
-              <option value="">All Status</option>
-              {SHELTER_STATUSES.map((s) => (
-                <option key={s.value} value={s.value}>{s.label}</option>
-              ))}
-            </select>
-            <span className="text-sm text-navy-500 whitespace-nowrap">
-              {filteredShelters.length} shelter{filteredShelters.length !== 1 ? 's' : ''}
-            </span>
-          </div>
-        </div>
-      </div>
-
       {loading ? (
         <PageLoader text="Loading shelters..." />
       ) : (
-        <div className="card overflow-hidden shadow-card">
-          <AdminTable columns={columns} data={filteredShelters} emptyMessage="No shelters found matching your criteria." />
-        </div>
+        <>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {[
+              { label: 'Total Shelters', value: stats.total, color: 'bg-navy-100', textColor: 'text-navy-700' },
+              { label: 'Open', value: stats.open, color: 'bg-success-100', textColor: 'text-success-700' },
+              { label: 'Closed', value: stats.closed, color: 'bg-danger-100', textColor: 'text-danger-700' },
+              { label: 'Total Capacity', value: stats.totalCapacity.toLocaleString(), color: 'bg-primary-100', textColor: 'text-primary-700' },
+            ].map((stat) => (
+              <div key={stat.label} className="card p-4 flex items-center gap-3 shadow-card hover:shadow-card-hover transition-shadow">
+                <div className={`w-10 h-10 ${stat.color} rounded-xl flex items-center justify-center shrink-0`}>
+                  <span className={`text-lg font-bold ${stat.textColor}`}>{stat.value}</span>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-navy-900">{stat.value}</p>
+                  <p className="text-xs font-medium text-navy-500">{stat.label}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="card p-4">
+            <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+              <div className="flex-1">
+                <label className="block text-xs font-medium text-navy-500 mb-1.5">Search</label>
+                <SearchBox
+                  value={filters.search}
+                  onSearch={(v) => setFilters((p) => ({ ...p, search: v }))}
+                  placeholder="Search by name, district, or address..."
+                />
+              </div>
+              <div className="flex items-center gap-3">
+                <FilterDropdown
+                  label="Status"
+                  options={SHELTER_STATUSES}
+                  value={filters.status}
+                  onChange={(v) => setFilters((p) => ({ ...p, status: v }))}
+                />
+                {hasActiveFilters && (
+                  <button
+                    onClick={clearFilters}
+                    className="text-sm text-navy-400 hover:text-navy-600 transition-colors"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <p className="text-sm text-navy-400 mb-4">
+            Showing <span className="font-semibold text-navy-600">{filteredShelters.length}</span> of{' '}
+            <span className="font-semibold text-navy-600">{shelters.length}</span> shelter{shelters.length !== 1 ? 's' : ''}
+          </p>
+
+          <div className="card shadow-card overflow-hidden">
+            <AdminTable
+              columns={columns}
+              data={filteredShelters}
+              emptyMessage={
+                hasActiveFilters
+                  ? 'No shelters match your current filters.'
+                  : 'No emergency shelters have been created yet.'
+              }
+            />
+          </div>
+        </>
       )}
 
       <Modal isOpen={showFormModal} onClose={() => { setShowFormModal(false); setSelectedShelter(null); }} title={isEditing ? 'Edit Shelter' : 'Create Shelter'} size="lg">
@@ -307,7 +372,7 @@ const ManageShelters = () => {
             <label className="input-label">Location <span className="text-danger-600">*</span></label>
             <div
               onClick={() => setShowMapPicker(true)}
-              className="border-2 border-dashed border-gray-300 rounded-xl p-4 cursor-pointer hover:border-primary-400 hover:bg-primary-50/30 transition-all"
+              className="border-2 border-dashed border-navy-200 rounded-xl p-4 cursor-pointer hover:border-primary-400 hover:bg-primary-50/30 transition-all"
             >
               {formData.latitude && formData.longitude ? (
                 <div className="space-y-2">
@@ -319,13 +384,13 @@ const ManageShelters = () => {
                       </svg>
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-gray-900">
+                      <p className="text-sm font-medium text-navy-900">
                         {formData.district || 'Unknown District'}{formData.state ? `, ${formData.state}` : ''}
                       </p>
-                      <p className="text-xs text-gray-500 truncate">{formData.address || `${parseFloat(formData.latitude).toFixed(4)}, ${parseFloat(formData.longitude).toFixed(4)}`}</p>
+                      <p className="text-xs text-navy-400 truncate">{formData.address || `${parseFloat(formData.latitude).toFixed(4)}, ${parseFloat(formData.longitude).toFixed(4)}`}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 text-xs text-gray-400">
+                  <div className="flex items-center gap-3 text-xs text-navy-400">
                     <span>Lat: {parseFloat(formData.latitude).toFixed(5)}</span>
                     <span>Lng: {parseFloat(formData.longitude).toFixed(5)}</span>
                     <span className="text-primary-600 font-medium ml-auto">Click to change</span>
@@ -333,12 +398,12 @@ const ManageShelters = () => {
                 </div>
               ) : (
                 <div className="text-center py-4">
-                  <svg className="w-10 h-10 text-gray-300 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <svg className="w-10 h-10 text-navy-200 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
-                  <p className="text-sm font-medium text-gray-600">Pick shelter location on map</p>
-                  <p className="text-xs text-gray-400 mt-1">District & state auto-detected from coordinates</p>
+                  <p className="text-sm font-medium text-navy-600">Pick shelter location on map</p>
+                  <p className="text-xs text-navy-400 mt-1">District & state auto-detected from coordinates</p>
                 </div>
               )}
             </div>
@@ -409,22 +474,22 @@ const ManageShelters = () => {
                 <h3 className="font-bold text-navy-900">{selectedShelter.shelterName}</h3>
                 <p className="text-sm text-navy-500">{selectedShelter.address}</p>
               </div>
-              <span className={`badge ${selectedShelter.status === 'Open' ? 'badge-success' : 'badge-danger'} ml-auto`}>
+              <span className={`badge ${STATUS_BADGE[selectedShelter.status] || 'badge-neutral'} ml-auto`}>
                 {selectedShelter.status}
               </span>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-xs font-medium text-navy-400 uppercase tracking-wider mb-1">State</p>
-                <p className="text-sm font-medium text-navy-800">{selectedShelter.state || '—'}</p>
-              </div>
-              <div>
                 <p className="text-xs font-medium text-navy-400 uppercase tracking-wider mb-1">District</p>
                 <p className="text-sm font-medium text-navy-800">{selectedShelter.district}</p>
               </div>
               <div>
+                <p className="text-xs font-medium text-navy-400 uppercase tracking-wider mb-1">State</p>
+                <p className="text-sm font-medium text-navy-800">{selectedShelter.state || '—'}</p>
+              </div>
+              <div>
                 <p className="text-xs font-medium text-navy-400 uppercase tracking-wider mb-1">Capacity</p>
-                <p className="text-sm font-medium text-navy-800">{selectedShelter.capacity} people</p>
+                <p className="text-sm font-medium text-navy-800">{selectedShelter.capacity.toLocaleString()} people</p>
               </div>
               <div>
                 <p className="text-xs font-medium text-navy-400 uppercase tracking-wider mb-1">Contact</p>
@@ -437,6 +502,10 @@ const ManageShelters = () => {
               <div>
                 <p className="text-xs font-medium text-navy-400 uppercase tracking-wider mb-1">Longitude</p>
                 <p className="text-sm font-medium text-navy-800 font-mono">{selectedShelter.longitude}</p>
+              </div>
+              <div className="col-span-2">
+                <p className="text-xs font-medium text-navy-400 uppercase tracking-wider mb-1">Created</p>
+                <p className="text-sm font-medium text-navy-800">{formatDate(selectedShelter.createdAt)}</p>
               </div>
             </div>
           </div>
