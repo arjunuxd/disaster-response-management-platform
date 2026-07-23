@@ -21,6 +21,7 @@ const notificationSchema = new mongoose.Schema(
         'report_under_review',
         'new_alert',
         'alert_updated',
+        'alert_deleted',
         'new_risk_zone',
         'risk_zone_updated',
         'risk_zone_deleted',

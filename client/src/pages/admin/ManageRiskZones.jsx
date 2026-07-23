@@ -17,6 +17,7 @@ const emptyForm = {
   latitude: '',
   longitude: '',
   riskLevel: 'Moderate',
+  status: 'Active',
   description: '',
 };
 
@@ -32,6 +33,11 @@ const RISK_INDICATOR = {
   High: 'bg-warning-500',
   Moderate: 'bg-primary-500',
   Low: 'bg-success-500',
+};
+
+const STATUS_BADGE = {
+  Active: 'badge-success',
+  Closed: 'badge-neutral',
 };
 
 const ManageRiskZones = () => {
@@ -78,6 +84,7 @@ const ManageRiskZones = () => {
       latitude: zone.latitude,
       longitude: zone.longitude,
       riskLevel: zone.riskLevel,
+      status: zone.status || 'Active',
       description: zone.description || '',
     });
     setIsEditing(true);
@@ -158,6 +165,14 @@ const ManageRiskZones = () => {
       render: (row) => (
         <span className={`badge ${RISK_BADGE[row.riskLevel] || 'badge-neutral'}`}>
           {row.riskLevel}
+        </span>
+      ),
+    },
+    {
+      header: 'Status',
+      render: (row) => (
+        <span className={`badge ${STATUS_BADGE[row.status] || 'badge-neutral'}`}>
+          {row.status || 'Active'}
         </span>
       ),
     },
@@ -323,17 +338,30 @@ const ManageRiskZones = () => {
               )}
             </div>
           </div>
-          <div>
-            <label className="input-label">Risk Level</label>
-            <select
-              value={formData.riskLevel}
-              onChange={(e) => setFormData((p) => ({ ...p, riskLevel: e.target.value }))}
-              className="input-field"
-            >
-              {RISK_LEVELS.map((r) => (
-                <option key={r.value} value={r.value}>{r.label}</option>
-              ))}
-            </select>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="input-label">Risk Level</label>
+              <select
+                value={formData.riskLevel}
+                onChange={(e) => setFormData((p) => ({ ...p, riskLevel: e.target.value }))}
+                className="input-field"
+              >
+                {RISK_LEVELS.map((r) => (
+                  <option key={r.value} value={r.value}>{r.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="input-label">Status</label>
+              <select
+                value={formData.status}
+                onChange={(e) => setFormData((p) => ({ ...p, status: e.target.value }))}
+                className="input-field"
+              >
+                <option value="Active">Active</option>
+                <option value="Closed">Closed</option>
+              </select>
+            </div>
           </div>
           <div>
             <label className="input-label">Description</label>
@@ -377,8 +405,11 @@ const ManageRiskZones = () => {
                 <h3 className="font-bold text-navy-900">{selectedZone.zoneName}</h3>
                 <p className="text-sm text-navy-500">{selectedZone.district}, {selectedZone.state}</p>
               </div>
-              <span className={`badge ${RISK_BADGE[selectedZone.riskLevel] || 'badge-neutral'} ml-auto`}>
+              <span className={`badge ${RISK_BADGE[selectedZone.riskLevel] || 'badge-neutral'}`}>
                 {selectedZone.riskLevel}
+              </span>
+              <span className={`badge ${STATUS_BADGE[selectedZone.status] || 'badge-neutral'} ml-2`}>
+                {selectedZone.status || 'Active'}
               </span>
             </div>
             <div className="grid grid-cols-2 gap-4">

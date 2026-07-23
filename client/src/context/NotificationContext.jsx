@@ -12,6 +12,8 @@ export const NotificationProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
   const intervalRef = useRef(null);
+  const notificationsRef = useRef([]);
+  notificationsRef.current = notifications;
 
   const fetchUnreadCount = useCallback(async () => {
     if (!isAuthenticated) return;
@@ -61,16 +63,16 @@ export const NotificationProvider = ({ children }) => {
 
   const deleteNotification = useCallback(async (id) => {
     try {
+      const target = notificationsRef.current.find((n) => n._id === id);
       await notificationService.deleteNotification(id);
       setNotifications((prev) => prev.filter((n) => n._id !== id));
-      setUnreadCount((prev) => {
-        const wasUnread = notifications.find((n) => n._id === id && !n.read);
-        return wasUnread ? Math.max(0, prev - 1) : prev;
-      });
+      if (target && !target.read) {
+        setUnreadCount((prev) => Math.max(0, prev - 1));
+      }
     } catch {
       // silent
     }
-  }, [notifications]);
+  }, []);
 
   useEffect(() => {
     if (!isAuthenticated) {

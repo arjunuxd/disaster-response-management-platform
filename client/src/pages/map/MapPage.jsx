@@ -70,10 +70,13 @@ const MapPage = () => {
       ]);
 
       const allReports = reportsRes.data?.data || [];
-      const activeReports = allReports.filter((r) => r.status !== 'Resolved' && r.status !== 'Rejected');
+      const closedStatuses = ['Resolved', 'Rejected', 'Closed'];
+      const activeReports = allReports.filter((r) => !closedStatuses.includes(r.status));
       setReports(activeReports);
-      setRiskZones(zonesRes.data?.data || []);
-      setShelters(sheltersRes.data?.data || []);
+      const allZones = zonesRes.data?.data || [];
+      setRiskZones(allZones.filter((z) => z.status !== 'Closed'));
+      const allShelters = sheltersRes.data?.data || [];
+      setShelters(allShelters.filter((s) => s.status !== 'Closed'));
 
       const colorMap = {};
       (typesRes.data?.data || []).forEach((t) => {

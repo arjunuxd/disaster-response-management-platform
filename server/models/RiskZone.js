@@ -40,6 +40,15 @@ const riskZoneSchema = new mongoose.Schema(
       },
       default: 'Moderate',
     },
+    status: {
+      type: String,
+      required: true,
+      enum: {
+        values: ['Active', 'Closed'],
+        message: 'Status must be either Active or Closed',
+      },
+      default: 'Active',
+    },
     description: {
       type: String,
       trim: true,

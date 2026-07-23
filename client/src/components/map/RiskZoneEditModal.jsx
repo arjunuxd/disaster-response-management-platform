@@ -8,6 +8,7 @@ const RiskZoneEditModal = ({ isOpen, onClose, zone, onSuccess }) => {
     district: '',
     state: '',
     riskLevel: 'Moderate',
+    status: 'Active',
     description: '',
     latitude: '',
     longitude: '',
@@ -22,6 +23,7 @@ const RiskZoneEditModal = ({ isOpen, onClose, zone, onSuccess }) => {
         district: zone.district || '',
         state: zone.state || '',
         riskLevel: zone.riskLevel || 'Moderate',
+        status: zone.status || 'Active',
         description: zone.description || '',
         latitude: zone.latitude?.toString() || '',
         longitude: zone.longitude?.toString() || '',
@@ -158,21 +160,38 @@ const RiskZoneEditModal = ({ isOpen, onClose, zone, onSuccess }) => {
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Risk Level <span className="text-red-500">*</span>
-            </label>
-            <select
-              name="riskLevel"
-              value={formData.riskLevel}
-              onChange={handleChange}
-              required
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300 bg-white"
-            >
-              {RISK_LEVELS.map((r) => (
-                <option key={r.value} value={r.value}>{r.label}</option>
-              ))}
-            </select>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Risk Level <span className="text-red-500">*</span>
+              </label>
+              <select
+                name="riskLevel"
+                value={formData.riskLevel}
+                onChange={handleChange}
+                required
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300 bg-white"
+              >
+                {RISK_LEVELS.map((r) => (
+                  <option key={r.value} value={r.value}>{r.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Status <span className="text-red-500">*</span>
+              </label>
+              <select
+                name="status"
+                value={formData.status}
+                onChange={handleChange}
+                required
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300 bg-white"
+              >
+                <option value="Active">Active</option>
+                <option value="Closed">Closed</option>
+              </select>
+            </div>
           </div>
 
           <div>

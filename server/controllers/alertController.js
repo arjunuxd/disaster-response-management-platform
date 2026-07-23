@@ -109,6 +109,18 @@ const updateAlert = async (req, res, next) => {
       ipAddress: req.ip,
     });
 
+    const users = await User.find({ role: 'user', isActive: true }).select('_id');
+    for (const user of users) {
+      await notificationService.createNotification({
+        user: user._id,
+        type: 'alert_updated',
+        title: `Alert Updated: ${alert.title}`,
+        message: `The emergency alert "${alert.title}" has been updated.`,
+        link: `/dashboard/alerts/${alert._id}`,
+        relatedId: alert._id,
+      });
+    }
+
     res.status(200).json({
       success: true,
       message: 'Alert updated successfully.',
@@ -140,6 +152,18 @@ const deleteAlert = async (req, res, next) => {
       affectedRecordModel: 'Alert',
       ipAddress: req.ip,
     });
+
+    const users = await User.find({ role: 'user', isActive: true }).select('_id');
+    for (const user of users) {
+      await notificationService.createNotification({
+        user: user._id,
+        type: 'alert_deleted',
+        title: `Alert Deleted: ${oldAlert.title}`,
+        message: `The emergency alert "${oldAlert.title}" has been removed.`,
+        link: '/dashboard/alerts',
+        relatedId: oldAlert._id,
+      });
+    }
 
     res.status(200).json({
       success: true,
