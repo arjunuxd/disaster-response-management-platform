@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
+import useSessionTimeout from '../hooks/useSessionTimeout';
 
 const AuthContext = createContext(null);
 
@@ -14,19 +15,23 @@ export const AuthProvider = ({ children }) => {
   const isAuthenticated = !!token && !!user;
   const isAdmin = user?.role === 'admin';
 
+  const clearSession = useCallback(() => {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
+    localStorage.removeItem('drmp_session_start');
+    setToken(null);
+    setUser(null);
+  }, []);
+
+  const { markLogin } = useSessionTimeout(user, clearSession);
+
   const saveSession = useCallback((tokenValue, userData) => {
     localStorage.setItem(TOKEN_KEY, tokenValue);
     localStorage.setItem(USER_KEY, JSON.stringify(userData));
     setToken(tokenValue);
     setUser(userData);
-  }, []);
-
-  const clearSession = useCallback(() => {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
-    setToken(null);
-    setUser(null);
-  }, []);
+    markLogin();
+  }, [markLogin]);
 
   const login = useCallback(async (email, password) => {
     const res = await api.post('/auth/login', { email, password });

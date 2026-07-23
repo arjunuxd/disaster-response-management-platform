@@ -51,7 +51,7 @@ const getAlerts = async (req, res, next) => {
     const { active } = req.query;
 
     let alerts;
-    if (active === 'true') {
+    if (active === 'true' || !req.user) {
       alerts = await alertService.getActiveAlerts();
     } else {
       alerts = await alertService.getAlerts();

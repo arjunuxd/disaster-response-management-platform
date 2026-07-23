@@ -155,7 +155,7 @@ const AdminSidebar = ({ isOpen, onClose }) => {
         role="complementary"
         aria-label="Admin navigation"
       >
-        {/* Mobile User Info */}
+          {/* Mobile User Info */}
         <div className="p-4 border-b border-navy-100 lg:hidden">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center ring-2 ring-primary-50">

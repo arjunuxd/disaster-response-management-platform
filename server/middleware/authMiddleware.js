@@ -26,6 +26,10 @@ const protect = async (req, res, next) => {
       throw new ApiError(401, 'User belonging to this token no longer exists.');
     }
 
+    if (!user.isActive) {
+      throw new ApiError(401, 'Account has been deactivated.');
+    }
+
     req.user = user;
     next();
   } catch (error) {
@@ -50,4 +54,23 @@ const authorize = (...roles) => {
   };
 };
 
-module.exports = { protect, authorize };
+const optionalProtect = async (req, res, next) => {
+  try {
+    if (
+      req.headers.authorization &&
+      req.headers.authorization.startsWith('Bearer')
+    ) {
+      const token = req.headers.authorization.split(' ')[1];
+      const decoded = jwt.verify(token, config.jwtSecret);
+      const user = await User.findById(decoded.id);
+      if (user) {
+        req.user = user;
+      }
+    }
+  } catch {
+    // ignore — proceed without req.user
+  }
+  next();
+};
+
+module.exports = { protect, authorize, optionalProtect };

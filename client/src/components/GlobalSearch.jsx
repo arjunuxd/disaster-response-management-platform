@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import searchService from '../services/searchService';
 import { useDebounce } from '../hooks';
@@ -98,10 +99,10 @@ const GlobalSearch = () => {
         </kbd>
       </button>
 
-      {isOpen && (
+      {isOpen && createPortal(
         <>
-          <div className="fixed inset-0 z-40 bg-black/20" onClick={() => setIsOpen(false)} />
-          <div className="fixed top-20 left-1/2 -translate-x-1/2 w-full max-w-xl bg-white rounded-xl shadow-2xl border border-gray-200 z-50 overflow-hidden">
+          <div className="fixed inset-0 z-[2100] bg-black/20" onClick={() => setIsOpen(false)} />
+          <div className="fixed top-20 left-1/2 -translate-x-1/2 w-full max-w-xl bg-white rounded-xl shadow-2xl border border-gray-200 z-[2101] overflow-hidden">
             <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100">
               <svg className="w-5 h-5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -207,7 +208,8 @@ const GlobalSearch = () => {
               ) : null}
             </div>
           </div>
-        </>
+        </>,
+        document.body
       )}
     </div>
   );

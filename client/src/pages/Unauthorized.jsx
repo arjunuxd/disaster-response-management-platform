@@ -1,6 +1,10 @@
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const Unauthorized = () => {
+  const { isAuthenticated } = useAuth();
+  const homePath = isAuthenticated ? '/dashboard' : '/';
+
   return (
     <div className="min-h-[calc(100vh-8rem)] flex items-center justify-center px-4">
       <div className="text-center max-w-md animate-fade-in">
@@ -15,15 +19,17 @@ const Unauthorized = () => {
           If you believe this is an error, please contact your administrator.
         </p>
         <div className="flex gap-3 justify-center">
-          <Link to="/" className="btn-primary">
+          <Link to={homePath} className="btn-primary">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
             </svg>
             Go Home
           </Link>
-          <Link to="/login" className="btn-secondary">
-            Sign In
-          </Link>
+          {!isAuthenticated && (
+            <Link to="/login" className="btn-secondary">
+              Sign In
+            </Link>
+          )}
         </div>
       </div>
     </div>

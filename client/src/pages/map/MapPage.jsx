@@ -35,7 +35,6 @@ const MapPage = () => {
   } = useMapContext();
 
   const { isAuthenticated, isAdmin } = useAuth();
-
   const [reports, setReports] = useState([]);
   const [riskZones, setRiskZones] = useState([]);
   const [shelters, setShelters] = useState([]);
@@ -70,7 +69,9 @@ const MapPage = () => {
         disasterTypeService.getDisasterTypes(),
       ]);
 
-      setReports(reportsRes.data?.data || []);
+      const allReports = reportsRes.data?.data || [];
+      const activeReports = allReports.filter((r) => r.status !== 'Resolved' && r.status !== 'Rejected');
+      setReports(activeReports);
       setRiskZones(zonesRes.data?.data || []);
       setShelters(sheltersRes.data?.data || []);
 
@@ -136,7 +137,7 @@ const MapPage = () => {
   };
 
   return (
-    <div className={`flex flex-col bg-gray-50 ${isFullscreen ? 'fixed inset-0 z-50' : 'h-screen'}`}>
+    <div className={`flex flex-col bg-gray-50 ${isFullscreen ? 'fixed inset-0 z-[3000]' : 'h-full overflow-hidden'}`}>
       {/* Top bar */}
       <div className="bg-white border-b border-gray-200 px-3 sm:px-4 py-2.5 sm:py-3 flex items-center gap-2 sm:gap-4 flex-shrink-0">
         <div className="flex items-center gap-2 sm:gap-3">
@@ -148,12 +149,7 @@ const MapPage = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-          <Link to="/" className="hidden sm:flex items-center gap-2 text-gray-500 hover:text-gray-700 transition-colors">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            <span className="text-xs font-medium">Home</span>
-          </Link>
+
           <div className="hidden sm:block">
             <h1 className="text-lg font-bold text-gray-900">Disaster Map</h1>
             <div className="flex items-center gap-3 text-xs text-gray-500">
@@ -227,7 +223,7 @@ const MapPage = () => {
         <div
           className={`${
             showSidebar ? 'translate-x-0' : '-translate-x-full'
-          } fixed sm:relative z-[999] sm:z-auto w-72 sm:w-72 flex-shrink-0 bg-white border-r border-gray-200 overflow-y-auto p-3 transition-transform duration-200 ease-in-out h-full`}
+          } fixed sm:relative z-[999] sm:z-auto w-72 sm:w-72 flex-shrink-0 bg-white border-r border-gray-200 overflow-y-auto p-3 transition-transform duration-200 ease-in-out top-0 bottom-0 sm:top-auto sm:bottom-auto h-full`}
         >
           <div className="flex items-center justify-between sm:hidden mb-3">
             <h3 className="text-sm font-semibold text-gray-700">Filters</h3>

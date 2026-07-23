@@ -51,7 +51,7 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md', showClose = true
 
   return (
     <div
-      className="fixed inset-0 z-50 overflow-y-auto"
+      className="fixed inset-0 z-[2100] overflow-y-auto"
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}

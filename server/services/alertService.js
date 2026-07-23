@@ -14,10 +14,10 @@ const getAlerts = async () => {
 };
 
 const getActiveAlerts = async () => {
+  const priorityOrder = { Emergency: 4, High: 3, Medium: 2, Low: 1 };
   const alerts = await Alert.find({ isActive: true, expiresAt: { $gt: new Date() } })
-    .populate('createdBy', 'fullName email')
-    .sort('-priority');
-  return alerts;
+    .populate('createdBy', 'fullName email');
+  return alerts.sort((a, b) => (priorityOrder[b.priority] || 0) - (priorityOrder[a.priority] || 0));
 };
 
 const getAlertById = async (alertId) => {

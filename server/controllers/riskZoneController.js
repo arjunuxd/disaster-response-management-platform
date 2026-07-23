@@ -1,5 +1,7 @@
 const riskZoneService = require('../services/riskZoneService');
 const auditLogService = require('../services/auditLogService');
+const notificationService = require('../services/notificationService');
+const User = require('../models/User');
 
 const createRiskZone = async (req, res, next) => {
   try {
@@ -20,6 +22,18 @@ const createRiskZone = async (req, res, next) => {
       affectedRecordModel: 'RiskZone',
       ipAddress: req.ip,
     });
+
+    const users = await User.find({ role: 'user', isActive: true }).select('_id');
+    for (const user of users) {
+      await notificationService.createNotification({
+        user: user._id,
+        type: 'new_risk_zone',
+        title: `New Risk Zone: ${zone.zoneName}`,
+        message: `A new ${zone.riskLevel} risk zone has been established in ${zone.district || 'the area'}.`,
+        link: '/dashboard/map',
+        relatedId: zone._id,
+      });
+    }
 
     res.status(201).json({
       success: true,
@@ -80,6 +94,18 @@ const updateRiskZone = async (req, res, next) => {
       ipAddress: req.ip,
     });
 
+    const users = await User.find({ role: 'user', isActive: true }).select('_id');
+    for (const user of users) {
+      await notificationService.createNotification({
+        user: user._id,
+        type: 'risk_zone_updated',
+        title: `Risk Zone Updated: ${zone.zoneName}`,
+        message: `The risk zone "${zone.zoneName}" has been updated. Risk level: ${zone.riskLevel}.`,
+        link: '/dashboard/map',
+        relatedId: zone._id,
+      });
+    }
+
     res.status(200).json({
       success: true,
       message: 'Risk zone updated successfully.',
@@ -111,6 +137,18 @@ const deleteRiskZone = async (req, res, next) => {
       affectedRecordModel: 'RiskZone',
       ipAddress: req.ip,
     });
+
+    const users = await User.find({ role: 'user', isActive: true }).select('_id');
+    for (const user of users) {
+      await notificationService.createNotification({
+        user: user._id,
+        type: 'risk_zone_deleted',
+        title: `Risk Zone Removed: ${oldZone.zoneName}`,
+        message: `The risk zone "${oldZone.zoneName}" in ${oldZone.district || 'the area'} has been removed.`,
+        link: '/dashboard/map',
+        relatedId: oldZone._id,
+      });
+    }
 
     res.status(200).json({
       success: true,

@@ -1,5 +1,7 @@
 const shelterService = require('../services/shelterService');
 const auditLogService = require('../services/auditLogService');
+const notificationService = require('../services/notificationService');
+const User = require('../models/User');
 
 const createShelter = async (req, res, next) => {
   try {
@@ -15,6 +17,18 @@ const createShelter = async (req, res, next) => {
       affectedRecordModel: 'EmergencyShelter',
       ipAddress: req.ip,
     });
+
+    const users = await User.find({ role: 'user', isActive: true }).select('_id');
+    for (const user of users) {
+      await notificationService.createNotification({
+        user: user._id,
+        type: 'new_shelter',
+        title: `New Shelter: ${shelter.shelterName}`,
+        message: `A new emergency shelter "${shelter.shelterName}" is now available in ${shelter.district || 'the area'} with capacity for ${shelter.capacity || 'N/A'} people.`,
+        link: '/dashboard/shelters',
+        relatedId: shelter._id,
+      });
+    }
 
     res.status(201).json({
       success: true,
@@ -77,6 +91,18 @@ const updateShelter = async (req, res, next) => {
       ipAddress: req.ip,
     });
 
+    const users = await User.find({ role: 'user', isActive: true }).select('_id');
+    for (const user of users) {
+      await notificationService.createNotification({
+        user: user._id,
+        type: 'shelter_updated',
+        title: `Shelter Updated: ${shelter.shelterName}`,
+        message: `The shelter "${shelter.shelterName}" has been updated. Status: ${shelter.status || 'active'}.`,
+        link: '/dashboard/shelters',
+        relatedId: shelter._id,
+      });
+    }
+
     res.status(200).json({
       success: true,
       message: 'Emergency shelter updated successfully.',
@@ -108,6 +134,18 @@ const deleteShelter = async (req, res, next) => {
       affectedRecordModel: 'EmergencyShelter',
       ipAddress: req.ip,
     });
+
+    const users = await User.find({ role: 'user', isActive: true }).select('_id');
+    for (const user of users) {
+      await notificationService.createNotification({
+        user: user._id,
+        type: 'shelter_deleted',
+        title: `Shelter Removed: ${oldShelter.shelterName}`,
+        message: `The shelter "${oldShelter.shelterName}" in ${oldShelter.district || 'the area'} has been removed.`,
+        link: '/dashboard/shelters',
+        relatedId: oldShelter._id,
+      });
+    }
 
     res.status(200).json({
       success: true,

@@ -1,6 +1,10 @@
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const ServerError = () => {
+  const { isAuthenticated } = useAuth();
+  const homePath = isAuthenticated ? '/dashboard' : '/';
+
   return (
     <div className="min-h-[calc(100vh-8rem)] flex items-center justify-center px-4">
       <div className="text-center max-w-md">
@@ -13,7 +17,7 @@ const ServerError = () => {
         </p>
         <div className="flex gap-4 justify-center">
           <Link
-            to="/"
+            to={homePath}
             className="bg-primary-600 hover:bg-primary-700 text-white font-medium px-6 py-2.5 rounded-lg transition-colors text-sm"
           >
             Go Home

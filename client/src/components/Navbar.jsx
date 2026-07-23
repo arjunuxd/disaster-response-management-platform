@@ -27,6 +27,7 @@ const Navbar = () => {
 
   const isActive = (path) => location.pathname === path;
   const isActivePrefix = (path) => location.pathname.startsWith(path);
+  const homePath = isAuthenticated ? (isAdmin ? '/admin' : '/dashboard') : '/';
 
   const closeMobile = useCallback(() => setMobileOpen(false), []);
   const closeMore = useCallback(() => setMoreOpen(false), []);
@@ -74,7 +75,7 @@ const Navbar = () => {
         <div className="flex items-center justify-between h-16">
 
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-3 shrink-0 group" aria-label="DRMP Home">
+          <Link to={homePath} className="flex items-center space-x-3 shrink-0 group" aria-label="DRMP Home">
             <div className="w-9 h-9 bg-gradient-to-br from-primary-500 to-primary-700 rounded-lg flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow duration-200">
               <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -88,7 +89,7 @@ const Navbar = () => {
 
           {/* Desktop Nav */}
           <nav className="hidden lg:flex items-center space-x-0.5" role="navigation" aria-label="Main navigation">
-            <Link to="/" className={linkClass(isActive('/'))}>
+            <Link to={homePath} className={linkClass(isActive(homePath))}>
               Home
             </Link>
             {publicLinks.map((link) => (
@@ -209,10 +210,10 @@ const Navbar = () => {
       >
         <div className="h-full overflow-y-auto px-4 py-4 space-y-1">
           <Link
-            to="/"
+            to={homePath}
             onClick={closeMobile}
             className={`block px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
-              isActive('/') ? 'bg-primary-50 text-primary-700' : 'text-navy-700 hover:bg-navy-50'
+              isActive(homePath) ? 'bg-primary-50 text-primary-700' : 'text-navy-700 hover:bg-navy-50'
             }`}
           >
             Home

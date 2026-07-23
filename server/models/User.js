@@ -62,8 +62,9 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
 };
 
 userSchema.methods.generateJwtToken = function () {
+  const expiresIn = this.role === 'admin' ? config.session.admin : config.session.user;
   return jwt.sign({ id: this._id, role: this.role }, config.jwtSecret, {
-    expiresIn: config.jwtExpire,
+    expiresIn,
   });
 };
 

@@ -11,4 +11,8 @@ module.exports = {
   jwtSecret: process.env.JWT_SECRET,
   jwtExpire: process.env.JWT_EXPIRE || '30d',
   clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
+  session: {
+    user: '7d',
+    admin: '72h',
+  },
 };

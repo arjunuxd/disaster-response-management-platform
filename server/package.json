@@ -1,5 +1,5 @@
 {
-  "name": "coastal-guard-server",
+  "name": "drmp-server",
   "version": "1.0.0",
   "description": "DRMP – Backend API Server",
   "license": "MIT",

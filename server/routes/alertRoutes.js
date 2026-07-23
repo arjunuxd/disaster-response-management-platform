@@ -7,12 +7,12 @@ const {
   updateAlert,
   deleteAlert,
 } = require('../controllers/alertController');
-const { protect, authorize } = require('../middleware/authMiddleware');
+const { protect, authorize, optionalProtect } = require('../middleware/authMiddleware');
 
 router
   .route('/')
   .post(protect, authorize('admin'), createAlert)
-  .get(getAlerts);
+  .get(optionalProtect, getAlerts);
 
 router
   .route('/:id')

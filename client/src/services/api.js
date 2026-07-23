@@ -25,6 +25,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem('drmp_token');
       localStorage.removeItem('drmp_user');
+      localStorage.removeItem('drmp_session_start');
       if (window.location.pathname !== '/login') {
         window.location.href = '/login';
       }

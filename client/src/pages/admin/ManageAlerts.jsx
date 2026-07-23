@@ -59,7 +59,11 @@ const ManageAlerts = () => {
       message: alert.message,
       priority: alert.priority,
       affectedDistricts: alert.affectedDistricts?.join(', ') || '',
-      expiresAt: alert.expiresAt ? new Date(alert.expiresAt).toISOString().slice(0, 16) : '',
+      expiresAt: alert.expiresAt ? (() => {
+        const d = new Date(alert.expiresAt);
+        const pad = (n) => String(n).padStart(2, '0');
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+      })() : '',
       isActive: alert.isActive,
     });
     setIsEditing(true);
@@ -72,6 +76,11 @@ const ManageAlerts = () => {
 
     const payload = {
       ...formData,
+      expiresAt: formData.expiresAt ? (() => {
+        const d = new Date(formData.expiresAt);
+        d.setHours(23, 59, 59, 999);
+        return d.toISOString();
+      })() : undefined,
       affectedDistricts: formData.affectedDistricts
         .split(',')
         .map((d) => d.trim())
@@ -264,7 +273,7 @@ const ManageAlerts = () => {
             <div>
               <label className="input-label">Expiry Date <span className="text-danger-600">*</span></label>
               <input
-                type="datetime-local"
+                type="date"
                 value={formData.expiresAt}
                 onChange={(e) => setFormData((p) => ({ ...p, expiresAt: e.target.value }))}
                 required

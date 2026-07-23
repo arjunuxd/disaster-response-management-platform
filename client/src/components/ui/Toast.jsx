@@ -67,7 +67,7 @@ const ToastContainer = () => {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed top-4 right-4 left-4 sm:left-auto z-[100] flex flex-col gap-2">
+    <div className="fixed top-4 right-4 left-4 sm:left-auto z-[2100] flex flex-col gap-2">
       {toasts.map((toast) => (
         <ToastItem key={toast.id} toast={toast} onRemove={removeToast} />
       ))}
